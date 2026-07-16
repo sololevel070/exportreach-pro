@@ -1,0 +1,11 @@
+# Vendored tools / dev scratch — not part of the Next.js app
+probe/
+scratch/
+electron/
+dist-electron/
+release/
+out/
+*.png
+*.tsbuildinfo
+test-leads.csv
+test-leads*.csv

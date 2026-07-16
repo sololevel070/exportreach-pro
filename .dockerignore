@@ -1,0 +1,25 @@
+node_modules
+.next
+out
+dist-electron
+release
+.git
+.github
+.vercel
+.insforge
+probe
+scratch
+scripts
+electron
+*.log
+*.tsbuildinfo
+.env
+.env.*
+!.env.example
+Dockerfile
+docker-compose.yml
+README.md
+*.md
+Screenshot*.png
+test-leads*.csv
+"MAKHANA ALL EXPORT TO WORLD OCT 24.xlsx"

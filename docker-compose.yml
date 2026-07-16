@@ -1,0 +1,48 @@
+# ExportReach self-hosted stack.
+#
+# 1. Copy .env.example to .env and fill in every value.
+# 2. docker compose up -d --build
+# 3. App is served on http://localhost:3000 (put a reverse proxy + TLS in front).
+#
+# NOTE: the data store is currently an InsForge project (set INSFORGE_URL /
+# INSFORGE_API_KEY in .env). A fully self-contained Postgres path is on the
+# roadmap — see DEPLOY.md.
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL}
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 25s
+
+  # Replaces the hosted scheduler: triggers the follow-up + reply-poll jobs hourly.
+  cron:
+    image: alpine:3.20
+    depends_on:
+      app:
+        condition: service_healthy
+    env_file:
+      - .env
+    restart: unless-stopped
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        apk add --no-cache curl >/dev/null;
+        echo "ExportReach cron sidecar started";
+        while true; do
+          curl -fsS -X POST http://app:3000/api/cron/followups   -H "x-cron-secret: $${CRON_SECRET}" >/dev/null 2>&1 || echo "followups trigger failed";
+          curl -fsS -X POST http://app:3000/api/cron/poll-replies -H "x-cron-secret: $${CRON_SECRET}" >/dev/null 2>&1 || echo "poll-replies trigger failed";
+          sleep 3600;
+        done
